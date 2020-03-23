@@ -1,0 +1,12 @@
+- name: internal loadbalancer Setup.
+  hosts: all
+  become: true
+  tasks:
+    - name: Set timezone to Asia/Jakarta
+      timezone:
+        name: Asia/Jakarta
+    
+    - name: ip forward execution
+      command: sh ip_forward.sh
+      args:
+        chdir: /home/vagrant

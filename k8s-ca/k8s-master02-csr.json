@@ -1,0 +1,16 @@
+{
+  "CN": "system:node:k8s-master02",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "ID",
+      "L": "DI Yogyakarta",
+      "O": "system:masters",
+      "OU": "Bantul",
+      "ST": "Idiots Team"
+    }
+  ]
+}

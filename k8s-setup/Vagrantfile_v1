@@ -1,0 +1,220 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+MASTER_01_IP = "172.28.128.121"
+MASTER_02_IP = "172.28.128.122"
+MASTER_03_IP = "172.28.128.123"
+NODE_01_IP = "172.28.128.126"
+NODE_02_IP = "172.28.128.127"
+NODE_03_IP = "172.28.128.128"
+LB_IP = "172.28.128.124"
+SLB_IP = "172.28.128.125"
+
+MASTER_COUNT = 3
+NODE_COUNT = 3
+
+VAGRANT_BOX = 'ubuntu/xenial64'
+
+Vagrant.configure("2") do |config|
+  config.hostmanager.enabled = true
+  config.hostmanager.manage_host = true
+  config.hostmanager.ignore_private_ip = false
+
+  config.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/authorized_keys", destination: "/home/vagrant/.ssh/authorized_keys"
+  config.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/config", destination: "/home/vagrant/.ssh/config"
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo sed -i -e "\\#PasswordAuthentication yes# s#PasswordAuthentication yes#PasswordAuthentication no#g" /etc/ssh/sshd_config
+    sudo systemctl restart sshd.service
+    echo "finished ssh restarted"
+  SHELL
+
+  # Define master 01
+    config.vm.define "k8s-master01" do |master|
+      master.vm.box = VAGRANT_BOX
+      master.vm.network "private_network", ip: "#{MASTER_01_IP}"
+      master.vm.hostname = "k8s-master01"
+      master.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+        vb.cpus = "1"
+      end
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/master01.pub", destination: "/home/vagrant/.ssh/id_rsa.pub"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/master01", destination: "/home/vagrant/.ssh/id_rsa"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ca/ca.pem", destination: "/home/vagrant/ca.pem"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ca/kubernetes.pem", destination: "/home/vagrant/kubernetes.pem"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ca/kubernetes-key.pem", destination: "/home/vagrant/kubernetes-key.pem"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/etcd-service/etcd-master01.service", destination: "/home/vagrant/etcd.service"
+      master.vm.provision "shell", inline: <<-SHELL
+        chmod 400 /home/vagrant/.ssh/id_rsa
+        chmod 400 /home/vagrant/.ssh/id_rsa.pub
+        echo "finished ssh key permission"
+      SHELL
+      master.vm.provision "playbook1", type:'ansible' do |ansible|
+        ansible.playbook = "k8s-setup/prerequites-playbook.yml"
+      end 
+      master.vm.provision "playbook2", type:'ansible' do |ansible|
+        ansible.playbook = "k8s-setup/etcd-master.yml"
+      end
+    end
+
+  # Define master 02
+    config.vm.define "k8s-master02" do |master|
+      master.vm.box = VAGRANT_BOX
+      master.vm.network "private_network", ip: "#{MASTER_02_IP}"
+      master.vm.hostname = "k8s-master02"
+      master.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+        vb.cpus = "1"
+      end
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/master02.pub", destination: "/home/vagrant/.ssh/id_rsa.pub"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/master02", destination: "/home/vagrant/.ssh/id_rsa"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ca/ca.pem", destination: "/home/vagrant/ca.pem"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ca/kubernetes.pem", destination: "/home/vagrant/kubernetes.pem"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ca/kubernetes-key.pem", destination: "/home/vagrant/kubernetes-key.pem"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/etcd-service/etcd-master02.service", destination: "/home/vagrant/etcd.service"
+      master.vm.provision "shell", inline: <<-SHELL
+        chmod 400 /home/vagrant/.ssh/id_rsa
+        chmod 400 /home/vagrant/.ssh/id_rsa.pub
+        echo "finished ssh key permission"
+      SHELL
+      master.vm.provision "playbook1", type:'ansible' do |ansible|
+        ansible.playbook = "k8s-setup/prerequites-playbook.yml"
+      end 
+      master.vm.provision "playbook2", type:'ansible' do |ansible|
+        ansible.playbook = "k8s-setup/etcd-master.yml"
+      end
+    end
+
+    # Define master 03
+    config.vm.define "k8s-master03" do |master|
+      master.vm.box = VAGRANT_BOX
+      master.vm.network "private_network", ip: "#{MASTER_03_IP}"
+      master.vm.hostname = "k8s-master03"
+      master.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+        vb.cpus = "1"
+      end
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/master03.pub", destination: "/home/vagrant/.ssh/id_rsa.pub"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/master03", destination: "/home/vagrant/.ssh/id_rsa"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ca/ca.pem", destination: "/home/vagrant/ca.pem"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ca/kubernetes.pem", destination: "/home/vagrant/kubernetes.pem"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ca/kubernetes-key.pem", destination: "/home/vagrant/kubernetes-key.pem"
+      master.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/etcd-service/etcd-master03.service", destination: "/home/vagrant/etcd.service"
+      master.vm.provision "shell", inline: <<-SHELL
+        chmod 400 /home/vagrant/.ssh/id_rsa
+        chmod 400 /home/vagrant/.ssh/id_rsa.pub
+        echo "finished ssh key permission"
+      SHELL
+      master.vm.provision "playbook1", type:'ansible' do |ansible|
+        ansible.playbook = "k8s-setup/prerequites-playbook.yml"
+      end 
+      master.vm.provision "playbook2", type:'ansible' do |ansible|
+        ansible.playbook = "k8s-setup/etcd-master.yml"
+      end
+    end
+
+  # Define loadbalancer
+  config.vm.define "k8s-loadbalancer" do |lb|
+    lb.vm.box = VAGRANT_BOX
+    lb.vm.network "private_network", ip: "#{LB_IP}"
+    lb.vm.hostname = "k8s-loadbalancer"
+    lb.vm.provider "virtualbox" do |vb|
+      vb.memory = "512"
+      vb.cpus = "1"
+    end
+    lb.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/lb.pub", destination: "/home/vagrant/.ssh/id_rsa.pub"
+    lb.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/lb", destination: "/home/vagrant/.ssh/id_rsa"
+    lb.vm.provision "shell", inline: <<-SHELL
+      chmod 400 /home/vagrant/.ssh/id_rsa
+      chmod 400 /home/vagrant/.ssh/id_rsa.pub
+      echo "finished ssh key permission"
+    SHELL
+    lb.vm.provision "ansible" do |ansible|
+      ansible.playbook = "k8s-setup/loadbalancer-playbook.yml"
+    end  
+  end
+
+  # Define internal loadbalancer 
+  # config.vm.define "k8s-s-loadbalancer" do |slb|
+  #   slb.vm.box = VAGRANT_BOX
+  #   slb.vm.network "private_network", ip: "#{SLB_IP}"
+  #   slb.vm.hostname = "k8s-slb"
+  #   slb.vm.provider "virtualbox" do |vb|
+  #     vb.memory = "512"
+  #     vb.cpus = "1"
+  #   end
+  #   slb.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/slb.pub", destination: "/home/vagrant/.ssh/id_rsa.pub"
+  #   slb.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/slb", destination: "/home/vagrant/.ssh/id_rsa"
+  #   slb.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-setup/ip_forward.sh", destination: "/home/vagrant/ip_forward.sh"
+  #   slb.vm.provision "shell", inline: <<-SHELL
+  #     chmod 400 /home/vagrant/.ssh/id_rsa
+  #     chmod 400 /home/vagrant/.ssh/id_rsa.pub
+  #     echo "finished ssh key permission"
+  #   SHELL
+  #   slb.vm.provision "ansible" do |ansible|
+  #     ansible.playbook = "k8s-setup/internal-loadbalancer-playbook.yml"
+  #   end   
+  # end
+
+  # Define worker nodes 01
+  config.vm.define "k8s-node01" do |node|
+    node.vm.box = VAGRANT_BOX
+    node.vm.network "private_network", ip: "#{NODE_01_IP}"
+    node.vm.hostname = "k8s-node01"
+    node.vm.provider "virtualbox" do |vb|
+      vb.memory = "1024"
+      vb.cpus = "1"
+    end
+    node.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/node01.pub", destination: "/home/vagrant/.ssh/id_rsa.pub"
+    node.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/node01", destination: "/home/vagrant/.ssh/id_rsa"
+    node.vm.provision "shell", inline: <<-SHELL
+      chmod 400 /home/vagrant/.ssh/id_rsa
+      chmod 400 /home/vagrant/.ssh/id_rsa.pub
+      echo "finished ssh key permission"
+    SHELL
+    node.vm.provision "ansible" do |ansible|
+      ansible.playbook = "k8s-setup/prerequites-playbook.yml"
+    end  
+  end
+
+  # Define worker nodes 02
+  config.vm.define "k8s-node02" do |node|
+    node.vm.box = VAGRANT_BOX
+    node.vm.network "private_network", ip: "#{NODE_02_IP}"
+    node.vm.hostname = "k8s-node02"
+    node.vm.provider "virtualbox" do |vb|
+      vb.memory = "1024"
+      vb.cpus = "1"
+    end
+    node.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/node02.pub", destination: "/home/vagrant/.ssh/id_rsa.pub"
+    node.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/node02", destination: "/home/vagrant/.ssh/id_rsa"
+    node.vm.provision "shell", inline: <<-SHELL
+      chmod 400 /home/vagrant/.ssh/id_rsa
+      chmod 400 /home/vagrant/.ssh/id_rsa.pub
+      echo "finished ssh key permission"
+    SHELL
+    node.vm.provision "ansible" do |ansible|
+      ansible.playbook = "k8s-setup/prerequites-playbook.yml"
+    end  
+  end
+
+  # Define worker nodes 03
+  config.vm.define "k8s-node03" do |node|
+    node.vm.box = VAGRANT_BOX
+    node.vm.network "private_network", ip: "#{NODE_03_IP}"
+    node.vm.hostname = "k8s-node03"
+    node.vm.provider "virtualbox" do |vb|
+      vb.memory = "1024"
+      vb.cpus = "1"
+    end
+    node.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/node03.pub", destination: "/home/vagrant/.ssh/id_rsa.pub"
+    node.vm.provision "file", source: "~/Research/OS/vm/k8s-ha/k8s-ssh/node03", destination: "/home/vagrant/.ssh/id_rsa"
+    node.vm.provision "shell", inline: <<-SHELL
+      chmod 400 /home/vagrant/.ssh/id_rsa
+      chmod 400 /home/vagrant/.ssh/id_rsa.pub
+      echo "finished ssh key permission"
+    SHELL
+    node.vm.provision "ansible" do |ansible|
+      ansible.playbook = "k8s-setup/prerequites-playbook.yml"
+    end  
+  end
+end

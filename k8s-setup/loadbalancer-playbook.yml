@@ -1,0 +1,45 @@
+---
+
+- name: Loadbalancer Setup.
+  hosts: all
+  become: true
+  tasks:
+    - name: Set timezone to Asia/Jakarta
+      timezone:
+        name: Asia/Jakarta
+        
+    - name: Update Debian package.
+      apt:
+        update_cache: yes
+
+    - name: Update all Debian packages to the latest version.
+      apt:
+        upgrade: dist
+
+    - name: Installing HA Proxy.
+      apt: 
+        name: "{{ item }}" 
+        state: latest 
+        update_cache: yes
+      with_items:
+        - haproxy
+        - git
+        - curl
+        - wget
+
+    - name: Configure HA Proxy.
+      template: 
+        src: haproxy.j2
+        dest: /etc/haproxy/haproxy.cfg 
+        mode: 0644
+    
+    - name: Test HAProxy.
+      command: sudo haproxy -f /etc/haproxy/haproxy.cfg -c
+
+    - name: Restart HAProxy.
+      service:
+        name: haproxy
+        state: restarted
+        enabled: yes
+    
+    

@@ -1,0 +1,16 @@
+{
+  "CN": "system:kube-scheduler",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "ID",
+      "L": "Yogyakarta",
+      "O": "system:kube-scheduler",
+      "OU": "Nevermind",
+      "ST": "Pentagon"
+    }
+  ]
+}

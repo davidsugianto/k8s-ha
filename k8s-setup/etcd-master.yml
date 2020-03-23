@@ -1,0 +1,50 @@
+---
+
+- name: Etcd Setup.
+  hosts: all
+  become: true
+  tasks:
+    - name: Create directory etcd.
+      file:
+        path: "{{ item }}"
+        state: directory
+      with_items:
+        - '/etc/etcd'
+        - '/var/lib/etcd'
+
+    - name: Ensure that ca file is properly configured
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      with_items:
+        - { src: k8s-ca/ca.pem, dest: /etc/etcd/ca.pem }
+        - { src: k8s-ca/kubernetes.pem, dest: /etc/etcd/kubernetes.pem }
+        - { src: k8s-ca/kubernetes-key.pem, dest: /etc/etcd/kubernetes-key.pem }
+
+    - name: Download etcd-v3.4.0-linux-amd64.tar.gz
+      get_url:
+        url: https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
+        dest: /home/vagrant
+
+    - name: Extract etcd-v3.4.0-linux-amd64.tar.gz
+      command: tar xvzf etcd-v3.4.0-linux-amd64.tar.gz
+      args:
+        chdir: /home/vagrant
+    
+    - name: Move etcd file to /usr/local/bin/
+      command: sudo mv /home/vagrant/etcd-v3.4.0-linux-amd64/etcd /usr/local/bin/.
+
+    - name: Move etcdctl file to /usr/local/bin/
+      command: sudo mv /home/vagrant/etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/.
+    
+    - name: Ensure that etcd is properly configured
+      template:
+        src: etcd.service
+        dest: /etc/systemd/system/etcd.service
+    
+    - name: Make sure a service is running
+      systemd:
+        state: started
+        daemon_reload: yes
+        enabled: yes
+        name: etcd
